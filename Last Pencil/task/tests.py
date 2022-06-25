@@ -1,3 +1,5 @@
+import random
+
 from hstest import *
 import re
 
@@ -93,16 +95,28 @@ class LastPencilTest(StageTest):
         return CheckResult.correct()
 
     test_data = [
-        [5, 1, [2, 1], 2, ["4", "a", "0", "-1", "_", "|", "|||||"], 2],
-        [20, 1, [3, 2, 3, 1, 2, 3, 3, 2], 1, ["4", "a", "0", "-1", "_", "|", "|||||"], 2],
-        [30, 1, [3, 2, 3, 1, 2, 3, 3, 3, 2, 3, 3], 2, ["4", "a", "0", "-1", "_", "|", "|||||"], 1],
-        [5, 2, [2, 1], 2, ["4", "a", "0", "-1", "_", "|", "|||||"], 1],
-        [20, 2, [3, 2, 3, 1, 2, 3, 3, 2], 1, ["4", "a", "0", "-1", "_", "|", "|||||"], 1],
-        [30, 2, [3, 2, 3, 1, 2, 3, 3, 3, 2, 3, 3], 2, ["4", "a", "0", "-1", "_", "|", "|||||"], 2],
+        [2, 1, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [3, 1, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [4, 1, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [5, 1, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [9, 1, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [13, 1, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [17, 1, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [21, 1, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [101, 1, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [2, 2, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [3, 2, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [4, 2, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [5, 2, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [9, 2, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [13, 2, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [17, 2, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [21, 2, ["4", "a", "0", "-1", "_", "|", "|||||"]],
+        [101, 2, ["4", "a", "0", "-1", "_", "|", "|||||"]],
     ]
 
-    @dynamic_test(data=test_data)
-    def CheckGame(self, amount, first, moves, last, incorrect, winner):
+    @dynamic_test(data=test_data, repeat=10)
+    def CheckGame(self, amount, first, incorrect):
         main = TestedProgram()
         main.start()
 
@@ -121,7 +135,7 @@ class LastPencilTest(StageTest):
             prevPlayer = rightName
             nextPlayer = leftName
 
-        output2 = main.execute(leftName+rightName).lower()
+        output2 = main.execute(leftName + rightName).lower()
 
         if ("choose between" not in output2) or (leftName.lower() not in output2) or (rightName.lower() not in output2):
             raise WrongAnswer("When the user provided the string, as a first player, that is not equal to"
@@ -129,106 +143,252 @@ class LastPencilTest(StageTest):
                               "inform user that his input is incorrect and re-query the input"
                               f" with \"Choose between '{leftName}' and '{rightName}'\" substring")
         for i in range(1, 5):
-            output2 = main.execute(leftName+rightName).lower()
-            if ("choose between" not in output2) or (leftName.lower() not in output2) or (rightName.lower() not in output2):
+            output2 = main.execute(leftName + rightName).lower()
+            if ("choose between" not in output2) or (leftName.lower() not in output2) or (
+                    rightName.lower() not in output2):
                 raise WrongAnswer("When the user provided the string, as a first player, that is not equal to"
                                   f"'{leftName}' or '{rightName}' after another wrong input - game should "
                                   "inform user that his input is incorrect and re-query the input"
                                   f" with \"Choose between '{leftName}' and '{rightName}'\" substring")
-        output3 = main.execute(prevPlayer).lower()
 
+        output3 = main.execute(prevPlayer).lower()
         lines = output3.strip().split('\n')
         linesNonEmpty = [s for s in lines if len(s) != 0]
 
-        if len(linesNonEmpty) != 2:
-            raise WrongAnswer("When the player provided the game correct initial conditions"
-                              ", there should be printed exactly 2 non-empty lines")
+        if first == 1:
+            if len(linesNonEmpty) != 2:
+                raise WrongAnswer("When the player provided the game correct initial conditions"
+                                  f", there should be printed exactly 2 non-empty lines if {prevPlayer} was first")
+            checkPencils = [s for s in lines if '|' in s]
+            if len(checkPencils) != 1:
+                raise WrongAnswer("When the player provided the game correct initial conditions"
+                                  ", there should be exactly one line in output, that contains '|' symbols "
+                                  f"if {prevPlayer} was first")
+            if len(list(set(checkPencils[0]))) != 1:
+                raise WrongAnswer("The pencils-lines should not contain any other symbols except the '|'")
+            if len(checkPencils[0]) != int(amount):
+                raise WrongAnswer("When the player provided the game correct initial conditions,"
+                                  "the pencils-line should contain as much '|' symbols, as there are in initial "
+                                  "conditions")
+            checkTurn = any((prevPlayer.lower() in s) and ("turn" in s) for s in lines)
 
-        checkPencils = [s for s in lines if '|' in s]
-        if len(checkPencils) == 0:
-            raise WrongAnswer("When the player provided the game correct initial conditions"
-                              ", there should be printed pencils-line with '|' symbols")
-        if len(checkPencils) > 1:
-            raise WrongAnswer("When the player provided the game correct initial conditions"
-                              ", there should be exactly one line in output, that contains '|' symbols")
-        if len(list(set(checkPencils[0]))) != 1:
-            raise WrongAnswer("The pencils-lines should not contain any other symbols except the '|'")
+            if not checkTurn:
+                raise WrongAnswer(f"When the player provided the game correct initial conditions"
+                                  f" there should be a line in output containing \"{prevPlayer}\" and \"turn\""
+                                  f" substrings if '{prevPlayer}' was chosen as the first player")
+        else:
+            if len(linesNonEmpty) != 5:
+                raise WrongAnswer("When the player provided the game correct initial conditions"
+                                  f", if {prevPlayer} was first there should be printed exactly 5 non-empty lines "
+                                  f"in such order:\n"
+                                  f"2 for {prevPlayer}\n"
+                                  f"1 for {prevPlayer}'s move\n"
+                                  f"2 for {nextPlayer}")
 
-        if len(checkPencils[0]) != int(amount):
-            raise WrongAnswer("When the player provided the game correct initial conditions,"
-                              "the pencils-line should contain as much '|' symbols, as there are in initial conditions")
+            linesPrev = linesNonEmpty[:2]
+            turn = linesNonEmpty[2]
+            linesNext = linesNonEmpty[2:]
 
-        checkTurn = any((prevPlayer.lower() in s) and ("turn" in s) for s in lines)
+            checkPencils = [s for s in linesPrev if '|' in s]
 
-        if not checkTurn:
-            raise WrongAnswer(f"When the player provided the game correct initial conditions"
-                              f" there should be a line in output containing \"{prevPlayer}\" and \"turn\""
-                              f" substrings if '{prevPlayer}' was chosen as the first player")
+            if len(checkPencils) != 1:
+                raise WrongAnswer("When the player provided the game correct initial conditions"
+                                  ", there should be exactly one line in output for each player, that contains '|' "
+                                  f"symbols if {prevPlayer} was first")
+            if len(list(set(checkPencils[0]))) != 1:
+                raise WrongAnswer("The pencils-lines should not contain any other symbols except the '|'")
+            if len(checkPencils[0]) != amount:
+                raise WrongAnswer("When the player provided the game correct initial conditions,"
+                                  f"the {prevPlayer}'s pencils-line should contain as much '|' symbols, as there are "
+                                  f"in initial conditions")
+
+            checkTurn = any((prevPlayer.lower() in s) and ("turn" in s) for s in linesPrev)
+
+            if not checkTurn:
+                raise WrongAnswer(f"When the player provided the game correct initial conditions"
+                                  f" there should be a line in output for {prevPlayer}'s turn containing "
+                                  f"\"{prevPlayer}\" and \"turn\" substrings if '{prevPlayer}' was chosen as the "
+                                  f"first player")
+
+            if turn != '1' and turn != '2' and turn != '3':
+                raise WrongAnswer(f"When the player provided the game correct initial conditions"
+                                  f" and the first player is {prevPlayer} - there should be printed 5 non-empty lines, "
+                                  f"third of them is {prevPlayer}'s turn, so it should be either '1', '2' or '3'")
+
+            bottake = (amount - 1) % 4
+
+            if bottake != 0 and int(turn) != bottake:
+                raise WrongAnswer(f"{prevPlayer}'s move doesn't follow a winning strategy. Example:\n"
+                                  f"If there are {amount} pencils left and it's {prevPlayer}'s turn, he takes {turn} "
+                                  f"pencils instead of {bottake}")
+
+            checkPencils = [s for s in linesNext if '|' in s]
+
+            if len(checkPencils) != 1:
+                raise WrongAnswer("When the player provided the game correct initial conditions"
+                                  ", there should be exactly one line in output for each player, that contains '|' "
+                                  f"symbols if {prevPlayer} was first")
+            if len(list(set(checkPencils[0]))) != 1:
+                raise WrongAnswer("The pencils-lines should not contain any other symbols except the '|'")
+            if len(checkPencils[0]) != amount-int(turn):
+                raise WrongAnswer("When the player provided the game correct initial conditions,"
+                                  f"the {nextPlayer}'s pencils-line should contain as much '|' symbols, as much as "
+                                  f"there is left after {prevPlayer}'s turn")
+
+            checkTurn = any((nextPlayer.lower() in s) and ("turn" in s) for s in linesNext)
+
+            if not checkTurn:
+                raise WrongAnswer(f"When the player provided the game correct initial conditions"
+                                  f" there should be a line in output for {nextPlayer}'s turn containing "
+                                  f"\"{nextPlayer}\" and \"turn\" substrings if '{prevPlayer}' was chosen as the "
+                                  f"first player")
 
         onTable = amount
+        if first == 2:
+            onTable -= int(linesNonEmpty[2])
+            prevPlayer, nextPlayer = nextPlayer, prevPlayer
 
-        for i in moves:
+        while onTable > 0:
             for j in incorrect:
                 output = main.execute(j).lower()
-                if ("possible values" not in output) or ('1' not in output) or ('2' not in output) or ('3' not in output) :
+                if ("possible values" not in output) or ('1' not in output) or ('2' not in output) or (
+                        '3' not in output):
                     raise WrongAnswer(f"If the player enters a string of how many pencils he took, that is not"
                                       f" '1', '2' or '3' - the game should "
                                       "inform user that his input is incorrect and re-query the input"
                                       f" with \"Possible values: '1', '2', '3'\" substring")
-            onTable -= i
+            i = random.randint(1, 3)
             output = main.execute(str(i)).lower()
+            if i >= onTable:
+                if onTable != i:
+                    if ("too many" not in output) or ('pencils' not in output):
+                        raise WrongAnswer(
+                            "If the player enters number of pencils that is greater than there are on the table"
+                            " - the game should inform user that his input is incorrect and re-query the input"
+                            " with \"too many pencils\" substring")
+
+                    output = main.execute(str(onTable)).lower()
+                lines = output.strip().split('\n')
+                linesNonEmpty = [s for s in lines if len(s) != 0]
+
+                if len(linesNonEmpty) != 1 or (nextPlayer.lower() not in linesNonEmpty[0]) or (
+                        'win' not in linesNonEmpty[0] and 'won' not in linesNonEmpty[0]):
+                    raise WrongAnswer(
+                        "When the last pencil was taken - there should be exactly one line in output, informing "
+                        "who was the winner in this game with \"*Name*\" and \"win\"/\"won\" substrings")
+
+                if not main.is_finished():
+                    raise WrongAnswer("Your program should not request anything, when there are no pencils left")
+
+                return CheckResult.correct()
+
+            onTable -= i
             lines = output.strip().split('\n')
             linesNonEmpty = [s for s in lines if len(s) != 0]
 
-            if len(linesNonEmpty) != 2:
-                raise WrongAnswer("When one of the players enters number of pencils, he wanted to remove"
-                                  ", there should be printed exactly 2 non-empty lines")
+            if onTable == 1:
+                if len(linesNonEmpty) != 4:
+                    raise WrongAnswer(f"After inputting number of pencils, that {prevPlayer} has taken"
+                                      f"if {nextPlayer} left with 1 pencil, there should be printed exactly 4 "
+                                      f"non-empty lines in such order:\n"
+                                      f"2 for {nextPlayer}\n"
+                                      f"1 for {nextPlayer}'s move\n"
+                                      f"1 for game-results")
+                linesPrev = linesNonEmpty[:2]
+                turn = linesNonEmpty[2]
+                result = linesNonEmpty[3]
 
-            checkPencils = [s for s in lines if '|' in s]
-            if len(checkPencils) == 0:
-                raise WrongAnswer("When one of the players enters number of pencils, he wanted to remove"
-                                  ", there should be printed pencils-line with '|' symbols")
-            if len(checkPencils) > 1:
-                raise WrongAnswer("When one of the players enters number of pencils, he wanted to remove"
-                                  ", there should be exactly one line in output, that contains '|' symbols")
+                checkPencils = [s for s in linesPrev if '|' in s]
+
+                if len(checkPencils) != 1:
+                    raise WrongAnswer(f"After inputting number of pencils, that {prevPlayer} has taken"
+                                      ", there should be exactly one line in output for each player, that contains '|'")
+                if len(list(set(checkPencils[0]))) != 1:
+                    raise WrongAnswer("The pencils-lines should not contain any other symbols except the '|'")
+                if len(checkPencils[0]) != onTable:
+                    raise WrongAnswer(f"After inputting number of pencils, that {prevPlayer} has taken"
+                                      f"the pencils-line for {nextPlayer} should contain as much '|' symbols, as there "
+                                      f"are pencils left")
+
+                checkTurn = any((nextPlayer.lower() in s) and ("turn" in s) for s in linesPrev)
+
+                if not checkTurn:
+                    raise WrongAnswer(f"After inputting number of pencils, that {prevPlayer} has taken"
+                                      f" there should be a line in output for {nextPlayer}'s turn containing "
+                                      f"\"{nextPlayer}\" and \"turn\" substrings")
+                if turn != "1":
+                    raise WrongAnswer(f"If {nextPlayer} left with 1 pencil, he can't take any other amount, except 1")
+                if (prevPlayer.lower() not in result) or ('win' not in result and 'won' not in result):
+                    raise WrongAnswer(
+                        "When the last pencil was taken - there should be exactly one line in output, informing "
+                        "who was the winner in this game with \"*Name*\" and \"win\" substrings")
+
+                if not main.is_finished():
+                    raise WrongAnswer("Your program should not request anything, when there are no pencils left")
+
+                return CheckResult.correct()
+
+
+            if len(linesNonEmpty) != 5:
+                raise WrongAnswer(f"After inputting number of pencils, that {prevPlayer} has taken"
+                                  ", there should be printed exactly 5 non-empty lines "
+                                  f"in such order:\n"
+                                  f"2 for {nextPlayer}\n"
+                                  f"1 for {nextPlayer}'s move\n"
+                                  f"2 for {prevPlayer}")
+            linesPrev = linesNonEmpty[:2]
+            turn = linesNonEmpty[2]
+            linesNext = linesNonEmpty[2:]
+
+            checkPencils = [s for s in linesPrev if '|' in s]
+
+            if len(checkPencils) != 1:
+                raise WrongAnswer(f"After inputting number of pencils, that {prevPlayer} has taken"
+                                  ", there should be exactly one line in output for each player, that contains '|'")
             if len(list(set(checkPencils[0]))) != 1:
-                raise WrongAnswer("The pencils-line should not contain any other symbols except the '|'")
-
+                raise WrongAnswer("The pencils-lines should not contain any other symbols except the '|'")
             if len(checkPencils[0]) != onTable:
-                raise WrongAnswer("When one of the players enters number of pencils, he wanted to remove, "
-                                  "the pencils-line should contain as much '|' symbols, as there are pencils left")
+                raise WrongAnswer(f"After inputting number of pencils, that {prevPlayer} has taken"
+                                  f"the pencils-line for {nextPlayer} should contain as much '|' symbols, as there "
+                                  f"are pencils left")
 
-            checkTurn = any((nextPlayer.lower() in s) and ("turn" in s) for s in lines)
+            checkTurn = any((nextPlayer.lower() in s) and ("turn" in s) for s in linesPrev)
 
             if not checkTurn:
-                raise WrongAnswer(f"When {prevPlayer} enters number of pencils, he wanted to remove"
-                                  f" there should be a line in output containing \"{nextPlayer}\" and \"turn\"")
-            prevPlayer, nextPlayer = nextPlayer, prevPlayer
+                raise WrongAnswer(f"After inputting number of pencils, that {prevPlayer} has taken"
+                                  f" there should be a line in output for {nextPlayer}'s turn containing "
+                                  f"\"{nextPlayer}\" and \"turn\" substrings")
 
-        output = main.execute(str(last+1)).lower()
-        if ("too many" not in output) or ('pencils' not in output):
-            raise WrongAnswer("If the player enters number of pencils that is greater than there are on the table"
-                              " - the game should inform user that his input is incorrect and re-query the input"
-                              " with \"too many pencils\" substring")
+            if turn != '1' and turn != '2' and turn != '3':
+                raise WrongAnswer(f"After inputting number of pencils, that {prevPlayer} has taken"
+                                  f"- there should be printed 5 non-empty lines, third of them is {prevPlayer}'s turn, "
+                                  "so it should be either '1', '2' or '3'")
 
-        output = main.execute(str(last)).lower()
-        lines = output.strip().split('\n')
-        linesNonEmpty = [s for s in lines if len(s) != 0]
+            bottake = (onTable - 1) % 4
+            if bottake != 0 and int(turn) != bottake:
+                raise WrongAnswer(f"{nextPlayer}'s move doesn't follow a winning strategy. Example:\n"
+                                  f"If there are {onTable} pencils left and it's {nextPlayer}'s turn, he takes {turn} "
+                                  f"pencils instead of {bottake}")
+            onTable -= int(turn)
 
-        winnerName = ""
+            checkPencils = [s for s in linesNext if '|' in s]
 
-        if winner == 1:
-            winnerName = leftName
-        if winner == 2:
-            winnerName = rightName
+            if len(checkPencils) != 1:
+                raise WrongAnswer(f"After inputting number of pencils, that {prevPlayer} has taken"
+                                  ", there should be exactly one line in output for each player, that contains '|'")
+            if len(list(set(checkPencils[0]))) != 1:
+                raise WrongAnswer("The pencils-lines should not contain any other symbols except the '|'")
+            if len(checkPencils[0]) != onTable:
+                raise WrongAnswer(f"After inputting number of pencils, that {prevPlayer} has taken"
+                                  f"the pencils-line for {prevPlayer} should contain as much '|' symbols, as there "
+                                  f"are pencils left")
 
-        if len(linesNonEmpty) != 1 or (winnerName.lower() not in linesNonEmpty[0]) or ('win' not in linesNonEmpty[0] and 'won' not in linesNonEmpty[0]):
-            raise WrongAnswer("When the last pencil was taken - there should be exactly one line in output, informing "
-                              "who was the winner in this game with \"*Name*\" and \"win\"/\"won\" substrings")
+            checkTurn = any((prevPlayer.lower() in s) and ("turn" in s) for s in linesNext)
 
-        if not main.is_finished():
-            raise WrongAnswer("Your program should not request anything, when there are no pencils left")
-        return CheckResult.correct()
+            if not checkTurn:
+                raise WrongAnswer(f"After inputting number of pencils, that {prevPlayer} has taken"
+                                  f" there should be a line in output for {prevPlayer}'s turn containing "
+                                  f"\"{prevPlayer}\" and \"turn\" substrings")
 
 
 if __name__ == '__main__':
